@@ -1,0 +1,26 @@
+Procurar certificados
+Crie uma URL para procurar e exibir um certificado:
+
+path('procurar_certificado/<int:id>/', views.procurar_certificado, name="procurar_certificado")
+
+Crie a VIEW para procurar um certificado:
+
+def procurar_certificado(request, id):
+    evento = get_object_or_404(Evento, id=id)
+    if not evento.criador == request.user:
+        raise Http404('Esse evento não é seu')
+    email = request.POST.get('email')
+    certificado = Certificado.objects.filter(evento=evento).filter(participante__email=email).first()
+    if not certificado:
+        messages.add_message(request, constants.WARNING, 'Certificado não encontrado')
+        return redirect(reverse('certificados_evento', kwargs={'id': evento.id}))
+    
+    return redirect(certificado.certificado.url)
+
+Envie o form para a URL criada:
+
+<form action="{% url 'procurar_certificado' evento.id %}" method="POST">
+    <input type="email" class="form-control" placeholder="Digite o e-mail" name="email">{% csrf_token %}
+    <br>
+    <input type="submit" value="BUSCAR" class="btn btn-primary">
+</form>

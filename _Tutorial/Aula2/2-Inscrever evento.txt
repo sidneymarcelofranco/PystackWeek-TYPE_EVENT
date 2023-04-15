@@ -1,0 +1,89 @@
+Inscrever evento
+    
+    Crie a URL para outras pessoas se inscreverem no evento:
+    
+    ```python
+    path('inscrever_evento/<int:id>/', views.inscrever_evento, name="inscrever_evento"),
+    ```
+    
+    Crie a view inscrever_evento:
+    
+    ```python
+    def inscrever_evento(request, id):
+    		# Validar login
+        evento = get_object_or_404(Evento, id=id)
+        if request.method == "GET":
+            return render(request, 'inscrever_evento.html', {'evento': evento})
+    ```
+    
+    Crie o HTML de inscrição no evento:
+    
+    ```python
+    {% extends 'bases/base_evento.html' %}
+    
+    {% block 'conteudo' %}
+        <br>
+        <br>
+        <div class="container">
+            <div class="row">
+                <div class="col-md-3">
+                
+                    <img width="100%" src="{{evento.logo.url}}">
+                    <br>
+                    <br>
+                    <h3>{{evento.nome}}</h3>
+                </div>
+                <hr>
+    
+                <div class="col-md-6">
+                    <h5>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s</h5>
+                    <br>
+                    <p>{{evento.data_inicio}} a {{evento.data_termino}}</p>
+    
+                    <a style="text-decoration: none;" class="btn-principal" href="#">QUERO PARTICIPAR</a>
+                
+                </div>
+            </div>
+        </div>
+    {% endblock %}
+    ```
+    
+    Adicione o campo para participantes na tabela do banco:
+    
+    ```python
+    participantes = models.ManyToManyField(User, related_name="evento_participante", null=True, blank=True)
+    ```
+    
+    Execute as migrações!
+    
+    Faça a inscrição na view:
+    
+    ```python
+    def inscrever_evento(request, id):
+        evento = get_object_or_404(Evento, id=id)
+        if request.method == "GET":
+            return render(request, 'inscrever_evento.html', {'evento': evento})
+        elif request.method == "POST":
+            # Validar se o usuário já é um participante
+            evento.participantes.add(request.user)
+            evento.save()
+    
+            messages.add_message(request, constants.SUCCESS, 'Inscrição com sucesso.')
+            return redirect(reverse('inscrever_evento', kwargs={'id': id}))
+    ```
+    
+    Exiba um botão diferente se o usuário já estiver inscrito:
+    
+    ```python
+    {% if request.user in evento.participantes.all %}
+        <input style="border-color: green;" type="submit" class="btn-principal" value="JÁ ESTÁ PARTICIPANDO" disabled>
+    {% else%}
+        <form action="{% url 'inscrever_evento' evento.id %}" method="POST">{% csrf_token %}
+            <input type="submit" class="btn-principal" value="QUERO PARTICIPAR">
+        </form>
+    {% endif %}
+    ```
+    
+    Exiba o link na tabela:
+
+http://127.0.0.1:8000/eventos/inscrever_evento/2/

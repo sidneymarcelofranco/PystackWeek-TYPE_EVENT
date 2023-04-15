@@ -1,0 +1,134 @@
+- Lista de participantes
+    
+    Crie a URL para exibir a página:
+    
+    ```python
+    path('participantes_evento/<int:id>/', views.participantes_evento, name="participantes_evento"),
+    ```
+    
+    Crie a view para exibir a página dos participantes:
+    
+    ```python
+    def participantes_evento(request, id):
+        evento = get_object_or_404(Evento, id=id)
+        if request.method == "GET":
+            participantes = evento.participantes.all()[::3]
+            return render(request, 'participantes_evento.html', {'evento': evento, 'participantes': participantes})
+    ```
+    
+    Crie o HTML participantes_evento:
+    
+    ```python
+    {% extends "bases/base_evento.html" %}
+    {% load static %}
+    
+    {% block 'importacoes' %}
+        <link href="{% static 'evento/css/gerenciar_evento.css' %}" rel="stylesheet">
+    {% endblock %}
+    
+    {% block 'conteudo' %}
+        <div class="container">
+            <br>
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert {{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+            <br>
+            <div class="row">
+                <div class="col-md-2">
+                    <img width="100%" src="/media/{{evento.logo}}">
+                    <br>
+                    <br>
+                    <h3>{{evento.nome}}</h3>
+                    
+                </div>
+    
+                <div class="col-md">
+                    <div class="row">
+                        <div class="col-md-2">
+                            <span class="badge rounded-pill text-bg-danger"><a class="link" href="{% url 'participantes_evento' evento.id %}">Participantes</a></span>
+                        </div>
+                        <div class="col-md-2">
+                            <span class="badge rounded-pill text-bg-danger"><a class="link" href="">Certificados</a></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <hr>
+    
+            <div class="row">
+                <h5>{{evento.participantes.all.count}} Participantes</h5>
+                
+                <div class="col-md-4">
+                    <table>
+                        <tr>
+                            <th>Nome</th>
+                            <th>E-mail</th>
+                        </tr>
+                        {% for participante in participantes %}
+                            <tr class="{% cycle 'linha' 'linha2' %}">
+                                <td>{{participante.username}}</td>
+                                <td>{{participante.email}}</td>
+                            </tr>
+                        {% endfor %}       
+                    </table>
+                    <br>
+                    <div class="row">
+                        <div class="col-md text-center">
+                            <p>X de Z</p>
+                        </div>
+    
+                        <div class="col-md ">
+                            <a href="#" class="btn-principal" style="text-decoration: none;">Exportar CSV</a>
+                        </div>
+                    </div>
+                </div>
+            
+            </div>
+            
+            
+        </div>
+    
+    {% endblock %}
+    ```
+    
+    Valide se o evento é realmente do criador:
+    
+    ```python
+    if not evento.criador == request.user:
+            raise Http404('Esse evento não é seu')
+    ```
+    
+    Vamos criar uma URL para gerar o arquivo de participantes:
+    
+    ```python
+    path('gerar_csv/<int:id>/', views.gerar_csv, name="gerar_csv"),
+    ```
+    
+    Crie a URL gerar CSV:
+    
+    ```python
+    def gerar_csv(request, id):
+        evento = get_object_or_404(Evento, id=id)
+        if not evento.criador == request.user:
+            raise Http404('Esse evento não é seu')
+        participantes = evento.participantes.all()
+        
+        token = f'{token_urlsafe(6)}.csv'
+        path = os.path.join(settings.MEDIA_ROOT, token)
+    
+        with open(path, 'w') as arq:
+            writer = csv.writer(arq, delimiter=",")
+            for participante in participantes:
+                x = (participante.username, participante.email)
+                writer.writerow(x)
+    
+        return redirect(f'/media/{token}')
+    ```
+    
+    Redirecione o botão EXPORTAR PDF para a URL criada:
+    
+    ```python
+    {% url 'gerar_csv' evento.id %}
+    ```

@@ -1,0 +1,274 @@
+Novo evento
+
+Crie um novo app chamado eventos:
+
+```python
+python3 manage.py startapp eventos
+```
+
+Instale o APP!
+
+Crie uma URL para eventos:
+
+```python
+path('eventos/', include('eventos.urls')),
+```
+
+Crie uma URL para NOVO EVENTO:
+
+```python
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('novo_evento/', views.novo_evento, name="novo_evento"),
+]
+```
+
+Criar a view
+
+from django.shortcuts import render
+from django.http import HttpResponse
+
+def novo_evento(request):
+    if request.method =="GET":
+        return HttpResponse('Novo evento')
+
+
+Crie o HTML base de evento o base_evento.html:
+
+```python
+{% extends 'bases/base.html' %}
+{% load static %}
+
+{% block 'head' %}
+
+    {% block 'importacoes' %}{% endblock %}
+    <link href="{% static 'evento/css/evento.css' %}" rel="stylesheet">
+    <link href="{% static 'usuarios/css/usuarios.css' %}" rel="stylesheet">
+
+{% endblock %}
+
+{% block 'body' %}
+    <nav class="navbar navbar-expand-lg bg-body-tertiary navbar-color" data-bs-theme="dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Type.Event</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNavDropdown">
+            <ul class="navbar-nav">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        Empresa
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="">Criar novo evento</a></li>
+                        <li><a class="dropdown-item" href="">Gerenciar eventos</a></li>
+                    </ul>
+                </li>
+                
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        Cliente
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="">Meus eventos</a></li>
+                        <li><a class="dropdown-item" href="">Meus certificados</a></li>
+                    </ul>
+                </li>
+            </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div style="min-height: 60vh">
+        {% block 'conteudo' %}
+
+        {% endblock %}
+    </div>
+
+    <div class="fundo-pagina">
+        
+    </div>
+{% endblock %}
+```
+
+Crie o CSS de evento:
+
+```python
+.navbar-color{
+    background-color: #201F1F !important;
+}
+
+body{
+    background-color: #1C1A1A;
+}
+
+.fundo-pagina{
+    background-image: url('/static/evento/img/fundo_pagina.png');
+    height: 300px;
+    background-size: cover;
+    
+}
+```
+
+Adicione a imagem de fundo!
+
+Adicione o Render na View de eventos
+
+from django.shortcuts import render
+from django.http import HttpResponse
+
+def novo_evento(request):
+    if request.method =="GET":
+        return render(request, 'novo_evento.html')
+
+
+Crie o HTML de novo_evento:
+
+```python
+{% extends "bases/base_evento.html" %}
+
+{% block 'conteudo' %}
+    <div class="container">
+        <div class="row">
+            <div class="col-md-7">
+                <br>
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert {{ message.tags }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+                <br>
+                <h3>Novo evento</h3>
+                <form action="{% url 'novo_evento' %}" method="POST" enctype="multipart/form-data">{% csrf_token %}
+                    <label>Nome evento</label>
+                    <input type="text" name="nome" class="form-control" placeholder="Nome...">
+                    <br>
+                    <label>Descrição</label>
+                    <textarea name="descricao" class="form-control" placeholder="Descrição..."></textarea>
+                    <br>
+                    <div class="row">
+                        <div class="col-md">
+                            <label>Data início</label>
+                            <input type="date" name="data_inicio" class="form-control">
+                        </div>
+                        <div class="col-md">
+                            <label>Data término</label>
+                            <input type="date" name="data_termino" class="form-control">
+                        </div>
+                    </div>
+                    <br>
+                    <label>Carga horária (em horas)</label>
+                    <input type="number" name="carga_horaria" class="form-control" placeholder="X horas">
+                    <br>
+                    <label>Logo do evento</label>
+                    <input type="file" name="logo" class="form-control">
+                
+            </div>
+
+            <div style="z-index: 99999" class="col-md">
+                <br>
+                <br>
+                <h3>Paleta de cores</h3>
+                <br>
+                <input type="color" name="cor_principal" value="#15773b"> <span>Cor principal</span>
+                <br>
+                <input type="color" name="cor_secundaria" value="#14e9e9"> <span>Cor secundária</span>
+                <br>
+                <input type="color" name="cor_fundo" value="#020202"> <span>Cor de fundo</span>
+                <br>
+                <br>
+                <input type="submit" class="btn-principal" value="Criar evento">
+                </form>
+            </div>
+            <form>
+        </div>
+    </div>
+
+{% endblock %}
+```
+
+Permita que apenas usuários logados acessa a página:
+
+```python
+from django.contrib.auth.decorators import login_required
+
+@login_required
+```
+
+Crie o banco de dados para o Evento:
+
+```python
+from django.contrib.auth.models import User
+
+class Evento(models.Model):
+    criador = models.ForeignKey(User, on_delete=models.DO_NOTHING)
+    nome = models.CharField(max_length=200)
+    descricao = models.TextField()
+    data_inicio = models.DateField()
+    data_termino = models.DateField()
+    carga_horaria = models.IntegerField()
+    logo = models.FileField(upload_to="logos")
+
+    #paleta de cores
+    cor_principal = models.CharField(max_length=7)
+    cor_secundaria = models.CharField(max_length=7)
+    cor_fundo = models.CharField(max_length=7)
+    
+
+    def __str__(self):
+        return self.nome
+```
+
+Execute as migrações!
+Cria o arquivo 0001_initial.py dentro do Migrations
+python manage.py makemigrations
+Cria a tabela no DB
+python manage.py migrate
+
+Crie a views para salvar o evento:
+from django.shortcuts import render, redirect
+from django.http import HttpResponse
+from django.contrib.auth.decorators import login_required
+from .models import Evento
+from django.urls import reverse
+from django.contrib.messages import constants
+from django.contrib import messages
+
+
+@login_required
+def novo_evento(request):
+    if request.method == "GET":
+        return render(request, 'novo_evento.html')
+    elif request.method == "POST":
+        nome = request.POST.get('nome')
+        descricao = request.POST.get('descricao')
+        data_inicio = request.POST.get('data_inicio')
+        data_termino = request.POST.get('data_termino')
+        carga_horaria = request.POST.get('carga_horaria')
+
+        cor_principal = request.POST.get('cor_principal')
+        cor_secundaria = request.POST.get('cor_secundaria')
+        cor_fundo = request.POST.get('cor_fundo')
+        
+        logo = request.FILES.get('logo')
+        
+        evento = Evento(
+            criador=request.user,
+            nome=nome,
+            descricao=descricao,
+            data_inicio=data_inicio,
+            data_termino=data_termino,
+            carga_horaria=carga_horaria,
+            cor_principal=cor_principal,
+            cor_secundaria=cor_secundaria,
+            cor_fundo=cor_fundo,
+            logo=logo,
+        )
+    
+        evento.save()
+        
+        messages.add_message(request, constants.SUCCESS, 'Evento cadastrado com sucesso')
+        return redirect(reverse('novo_evento'))
