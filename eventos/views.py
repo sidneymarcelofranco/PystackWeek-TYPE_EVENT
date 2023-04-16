@@ -1,10 +1,14 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse
+from django.http import HttpResponse, Http404
 from django.contrib.auth.decorators import login_required
 from .models import Evento
 from django.urls import reverse
 from django.contrib.messages import constants
 from django.contrib import messages
+from secrets import token_urlsafe
+from django.conf import settings
+import csv
+import os
 
 @login_required
 def novo_evento(request):
@@ -53,7 +57,39 @@ def gerenciar_evento(request):
 
 @login_required
 def inscrever_evento(request, id):
-		# Validar login
-    evento = get_object_or_404(Evento, id=id) # da Classe Evento busque o Id
+    evento = get_object_or_404(Evento, id=id)
     if request.method == "GET":
-        return render(request, 'inscrever_evento.html', {'evento': evento})    
+        return render(request, 'inscrever_evento.html', {'evento': evento})
+    elif request.method == "POST":
+        # Verificar se o usuário já é um participante, Desafio!
+        evento.participantes.add(request.user)
+        evento.save()
+
+        messages.add_message(request, constants.SUCCESS, 'Inscrição com sucesso.')
+        return redirect(reverse('inscrever_evento', kwargs={'id': id})) 
+
+def participantes_evento(request, id):
+    evento = get_object_or_404(Evento, id=id)
+    if not evento.criador == request.user:
+            raise Http404('Esse evento não é seu')    
+    if request.method == "GET":
+        # participantes = evento.participantes.all()[::3]
+        participantes = evento.participantes.all() #verificar slicing de listas
+        return render(request, 'participantes_evento.html', {'evento': evento, 'participantes': participantes})    
+
+def gerar_csv(request, id):
+    evento = get_object_or_404(Evento, id=id)
+    if not evento.criador == request.user:
+        raise Http404('Esse evento não é seu')
+    participantes = evento.participantes.all()
+    
+    token = f'{token_urlsafe(6)}.csv'
+    path = os.path.join(settings.MEDIA_ROOT, token)
+
+    with open(path, 'w') as arq:
+        writer = csv.writer(arq, delimiter=",")
+        for participante in participantes:
+            x = (participante.username, participante.email)
+            writer.writerow(x)
+
+    return redirect(f'/media/{token}')
