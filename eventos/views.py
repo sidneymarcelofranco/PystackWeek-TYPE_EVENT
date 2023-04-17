@@ -7,11 +7,11 @@ from django.contrib.messages import constants
 from django.contrib import messages
 from secrets import token_urlsafe
 from django.conf import settings
-import csv
-import os
 from io import BytesIO  
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from PIL import Image, ImageDraw, ImageFont
+import csv
+import os
 import sys
 
 @login_required
@@ -142,3 +142,15 @@ def gerar_certificado(request, id):
     
     messages.add_message(request, constants.SUCCESS, 'Certificados gerados')
     return redirect(reverse('certificados_evento', kwargs={'id': evento.id}))
+
+def procurar_certificado(request, id):
+    evento = get_object_or_404(Evento, id=id)
+    if not evento.criador == request.user:
+        raise Http404('Esse evento não é seu')
+    email = request.POST.get('email')
+    certificado = Certificado.objects.filter(evento=evento).filter(participante__email=email).first()
+    if not certificado:
+        messages.add_message(request, constants.WARNING, 'Certificado não encontrado')
+        return redirect(reverse('certificados_evento', kwargs={'id': evento.id}))
+    
+    return redirect(certificado.certificado.url)
