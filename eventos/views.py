@@ -1,7 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, Http404
 from django.contrib.auth.decorators import login_required
-from .models import Evento, Certificado
+from .models import Evento
+from .models import Certificado
 from django.urls import reverse
 from django.contrib.messages import constants
 from django.contrib import messages
@@ -113,7 +114,8 @@ def gerar_certificado(request, id):
         raise Http404('Esse evento não é seu')
 
     path_template = os.path.join(settings.BASE_DIR, 'templates/static/evento/img/template_certificado.png')
-    path_fonte = os.path.join(settings.BASE_DIR, 'templates/static/fontes/arimo.ttf')
+    path_fonte = os.path.join(settings.BASE_DIR, 'templates/static/evento/fontes/arimo.ttf')
+    print(path_fonte)
     for participante in evento.participantes.all():
         # TODO: Validar se já existe certificado desse participante para esse evento
         img = Image.open(path_template)
@@ -121,6 +123,8 @@ def gerar_certificado(request, id):
         draw = ImageDraw.Draw(img)
         fonte_nome = ImageFont.truetype(path_fonte, 60)
         fonte_info = ImageFont.truetype(path_fonte, 30)
+        print(path_template)
+        print(fonte_nome)
         draw.text((230, 651), f"{participante.username}", font=fonte_nome, fill=(0, 0, 0))
         draw.text((761, 782), f"{evento.nome}", font=fonte_info, fill=(0, 0, 0))
         draw.text((816, 849), f"{evento.carga_horaria} horas", font=fonte_info, fill=(0, 0, 0))
@@ -142,7 +146,7 @@ def gerar_certificado(request, id):
     
     messages.add_message(request, constants.SUCCESS, 'Certificados gerados')
     return redirect(reverse('certificados_evento', kwargs={'id': evento.id}))
-
+    
 def procurar_certificado(request, id):
     evento = get_object_or_404(Evento, id=id)
     if not evento.criador == request.user:
